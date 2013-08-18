@@ -11,16 +11,19 @@ var client = arDrone.createClient({frameRate: frameRate});
 client.config('general:navdata_demo', 'FALSE');
 //client.createRepl();
 
+var exit = function(code) {
+  console.log('Bye!');
+  process.exit(code)
+};
+
 var landing = false;
 process.on('SIGINT', function() {
   if (landing) {
-    console.log('Bye');
-    process.exit(0);
+    exit(0);
   } else {
     console.log('Landing');
     client.land(function() {
-      console.log('Bye!');
-      process.exit(0);
+      exit(0);
     });
     landing = true;
   }
@@ -33,6 +36,7 @@ process.chdir(flightID);
 
 console.log('Create PNG Stream');
 var pngSteram = client.getPngStream();
+
 
 
 try {
@@ -76,8 +80,7 @@ try {
       } else {
         client.stop();
         client.land(function() {
-          console.log('Bye!');
-          process.exit(0);
+          exit(0)
         });
       }
     });
@@ -86,8 +89,7 @@ try {
 } catch (error) {
   console.log(error);
   client.land(function() {
-    console.log('Bye!');
-    process.exit(0);
+    exit(0);
   });
 }
 
