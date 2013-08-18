@@ -1,15 +1,15 @@
 var arDrone = require('ar-drone'),
+sys = require('sys'),
 fs = require('fs'),
+exec = require('child_process').exec,
 util = require('util');
 
-var numOfPics = 40,
-    spinSpeed = 0.5,
-    frameRate = 5;
+var spinSpeed = 0.5,
+    frameRate = 3;
 
 
 var client = arDrone.createClient({frameRate: frameRate});
 client.config('general:navdata_demo', 'FALSE');
-//client.createRepl();
 
 var landing = false;
 process.on('SIGINT', function() {
@@ -17,28 +17,27 @@ process.on('SIGINT', function() {
     console.log('Bye');
     process.exit(0);
   } else {
+    createPanorama();
     console.log('Landing');
     client.land(function() {
       console.log('Bye!');
-      process.exit(0);
     });
     landing = true;
   }
 });
 
-var flightID = new Date().toString();
+var flightID = new Date().toISOString();
 console.log("Flight ID: " + flightID);
 fs.mkdirSync(flightID);
-process.chdir(flightID);
 
 console.log('Create PNG Stream');
 var pngSteram = client.getPngStream();
 
 
 try {
-  //var pngSteram = undefined,
   var initialAngle = undefined,
   lastAngle = 0, offset = 0,
+  flying = true,
   picCount = 0;
 
   console.log('Take off!');
@@ -60,25 +59,21 @@ try {
         console.log('Initial Angle is: ' + lastAngle);
         console.log('Offset is: ' + offset);
       }
-      //console.log(lastAngle - 180);
-      //console.log((lastAngle - initialAngle));
       var currAngle = (lastAngle + offset);
 
-      console.log({
-        currAngle: currAngle,
-        lastAngle: lastAngle,
-        angle: lastAngle - 180
-      });
       if (currAngle < 370.0) {
         util.print('.');
-        fs.writeFileSync(String('0000' + picCount + ".png").slice(-8), png);
+        var filename = String('0000' + picCount).slice(-4);
+        fs.writeFileSync(flightID +
+                         "/"+ filename + ".png", png);
         picCount++;
-      } else {
+      } else if (flying) {
         client.stop();
+        createPanorama();
         client.land(function() {
           console.log('Bye!');
-          process.exit(0);
         });
+        flying = false;
       }
     });
   });
@@ -89,5 +84,20 @@ try {
     console.log('Bye!');
     process.exit(0);
   });
+}
+
+function createPanorama() {
+  if (fs.readdirSync(flightID).length > 0) {
+    console.log("Generating Panorama");
+  exec('bin/panoramize.sh ' + flightID, function (error, stdout, stderr) {
+    fs.writeFileSync(flightID + "/panoramic_stdout.txt", stdout);
+    fs.writeFileSync(flightID + "/panoramic_stderr.txt", stderr);
+    if (error !== null) {
+      console.log('exec error: ' + error);
+    }
+    console.log("Panorama generated");
+    process.exit(0);
+  });
+  }
 }
 
