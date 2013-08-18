@@ -1,6 +1,7 @@
 var arDrone = require('ar-drone'),
 fs = require('fs'),
-util = require('util');
+util = require('util'),
+sys  = requre('sys');
 
 var numOfPics = 40,
     spinSpeed = 0.5,
@@ -29,7 +30,6 @@ process.on('SIGINT', function() {
 var flightID = new Date().toString();
 console.log("Flight ID: " + flightID);
 fs.mkdirSync(flightID);
-process.chdir(flightID);
 
 console.log('Create PNG Stream');
 var pngSteram = client.getPngStream();
@@ -71,11 +71,12 @@ try {
       });
       if (currAngle < 370.0) {
         util.print('.');
-        fs.writeFileSync(String('0000' + picCount + ".png").slice(-8), png);
+        fs.writeFileSync(flightID + '/' + String('0000' + picCount + ".png").slice(-8), png);
         picCount++;
       } else {
         client.stop();
         client.land(function() {
+          sys.exec('bin/panoramize.sh '+ flightId)
           console.log('Bye!');
           process.exit(0);
         });
