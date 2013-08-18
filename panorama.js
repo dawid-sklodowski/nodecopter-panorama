@@ -76,9 +76,10 @@ try {
       } else {
         client.stop();
         client.land(function() {
-          sys.exec('bin/panoramize.sh '+ flightId)
-          console.log('Bye!');
-          process.exit(0);
+          sys.exec('bin/panoramize.sh '+ flightID, function(){
+            console.log('Bye!');
+            process.exit(0);
+          })
         });
       }
     });
